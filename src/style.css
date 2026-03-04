@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #faf0e6;
+  --color-cream-dark: #efe3d4;
+  --color-plum: #531a4a;
+  --color-plum-light: #6e2d63;
+  --color-plum-dark: #2D1B2E;
+  --color-plum-muted: #8B7B8B;
+  --font-serif: 'Playfair Display', serif;
+}
+
+html {
+  background-color: white;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-plum-dark);
+  font-family: system-ui, -apple-system, sans-serif;
+}

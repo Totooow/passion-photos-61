@@ -1,0 +1,77 @@
+{
+  "folders": [
+    { "id": "chevaux", "name": "Chevaux" },
+    { "id": "paysages", "name": "Paysages" },
+    { "id": "animaux", "name": "Animaux" }
+  ],
+  "formats": [
+    { "id": "10x15", "label": "10x15 cm", "type": "print" },
+    { "id": "13x18", "label": "13x18 cm", "type": "print" },
+    { "id": "numerique", "label": "Numérique", "type": "digital" }
+  ],
+  "photos": [
+    {
+      "id": "chevaux-1",
+      "folder": "chevaux",
+      "title": "Cheval au galop",
+      "src": "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "chevaux-2",
+      "folder": "chevaux",
+      "title": "Cheval dans la brume",
+      "src": "https://images.unsplash.com/photo-1534773728080-89565e3e8862?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "chevaux-3",
+      "folder": "chevaux",
+      "title": "Poulain au pré",
+      "src": "https://images.unsplash.com/photo-1598974357801-cbca100e65d3?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "paysages-1",
+      "folder": "paysages",
+      "title": "Lever de soleil normand",
+      "src": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "paysages-2",
+      "folder": "paysages",
+      "title": "Campagne en automne",
+      "src": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "paysages-3",
+      "folder": "paysages",
+      "title": "Chemin forestier",
+      "src": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "animaux-1",
+      "folder": "animaux",
+      "title": "Chat endormi",
+      "src": "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "animaux-2",
+      "folder": "animaux",
+      "title": "Vache curieuse",
+      "src": "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    },
+    {
+      "id": "animaux-3",
+      "folder": "animaux",
+      "title": "Canards au lac",
+      "src": "https://images.unsplash.com/photo-1459682687441-7761439a709d?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    }
+  ]
+}
