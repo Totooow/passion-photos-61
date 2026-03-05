@@ -109,7 +109,7 @@ function handleBulkDelete() {
           </template>
 
           <div class="ml-auto flex items-center gap-2">
-            <button class="text-[11px] text-plum-muted hover:text-red-500 transition-colors" @click="disconnect">
+            <button class="text-xs text-plum-muted hover:text-red-500 transition-colors" @click="disconnect">
               Quitter
             </button>
           </div>
@@ -254,16 +254,16 @@ function handleBulkDelete() {
               <span class="text-xs font-medium tabular-nums">{{ selectedIds.size }} sélectionnée(s)</span>
               <div class="flex items-center gap-2">
                 <button
-                  class="text-[11px] text-white/60 hover:text-white transition-colors"
+                  class="text-xs text-white/60 hover:text-white transition-colors"
                   @click="selectAll(filteredPhotos.map((p) => p.id))"
                 >
                   Tout
                 </button>
-                <button class="text-[11px] text-white/60 hover:text-white transition-colors" @click="deselectAll">
+                <button class="text-xs text-white/60 hover:text-white transition-colors" @click="deselectAll">
                   Aucun
                 </button>
                 <button
-                  class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-[11px] font-medium transition-colors"
+                  class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium transition-colors"
                   @click="handleBulkDelete"
                 >
                   Supprimer ({{ selectedIds.size }})

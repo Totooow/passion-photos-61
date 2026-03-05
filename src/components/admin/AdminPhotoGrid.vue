@@ -53,7 +53,7 @@ function formatPrices(photo) {
 
       <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          class="w-6 h-6 bg-white/90 backdrop-blur rounded-md flex items-center justify-center text-plum/50 hover:text-plum-dark shadow-sm transition-colors"
+          class="w-8 h-8 bg-white/90 backdrop-blur rounded-md flex items-center justify-center text-plum/50 hover:text-plum-dark shadow-sm transition-colors"
           aria-label="Modifier"
           @click="$emit('open-edit', photo)"
         >
@@ -67,7 +67,7 @@ function formatPrices(photo) {
           </svg>
         </button>
         <button
-          class="w-6 h-6 bg-white/90 backdrop-blur rounded-md flex items-center justify-center text-plum/50 hover:text-red-600 shadow-sm transition-colors"
+          class="w-8 h-8 bg-white/90 backdrop-blur rounded-md flex items-center justify-center text-plum/50 hover:text-red-600 shadow-sm transition-colors"
           aria-label="Supprimer"
           @click="$emit('remove', photo)"
         >
@@ -110,19 +110,19 @@ function formatPrices(photo) {
       <template v-if="editingPhoto !== photo.id">
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-plum-dark truncate leading-tight">{{ photo.title }}</p>
-          <p class="text-[11px] text-plum-muted mt-0.5">
+          <p class="text-xs text-plum-muted mt-0.5">
             {{ formatPrices(photo) }}
           </p>
         </div>
         <div class="flex gap-1 shrink-0">
           <button
-            class="px-2 py-1 text-[11px] text-plum-muted hover:text-plum-dark hover:bg-plum/5 rounded transition-colors"
+            class="px-2 py-1 text-xs text-plum-muted hover:text-plum-dark hover:bg-plum/5 rounded transition-colors"
             @click="$emit('open-edit', photo)"
           >
             Modifier
           </button>
           <button
-            class="px-2 py-1 text-[11px] text-plum-muted hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            class="px-2 py-1 text-xs text-plum-muted hover:text-red-600 hover:bg-red-50 rounded transition-colors"
             @click="$emit('remove', photo)"
           >
             Supprimer

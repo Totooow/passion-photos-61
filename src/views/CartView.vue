@@ -33,14 +33,14 @@ const { photoUrl } = usePhotos()
           <!-- Qty controls for print formats -->
           <div v-if="item.formatType === 'print'" class="flex items-center gap-1.5 shrink-0">
             <button
-              class="w-6 h-6 flex items-center justify-center rounded-full border border-plum/15 text-plum-muted hover:bg-plum/5 hover:text-plum-dark transition-colors text-xs"
+              class="w-8 h-8 flex items-center justify-center rounded-full border border-plum/15 text-plum-muted hover:bg-plum/5 hover:text-plum-dark transition-colors text-xs"
               @click="updateQty(item.key, item.qty - 1)"
             >
               &minus;
             </button>
             <span class="text-sm font-medium text-plum-dark w-6 text-center">{{ item.qty }}</span>
             <button
-              class="w-6 h-6 flex items-center justify-center rounded-full border border-plum/15 text-plum-muted hover:bg-plum/5 hover:text-plum-dark transition-colors text-xs"
+              class="w-8 h-8 flex items-center justify-center rounded-full border border-plum/15 text-plum-muted hover:bg-plum/5 hover:text-plum-dark transition-colors text-xs"
               @click="updateQty(item.key, item.qty + 1)"
             >
               +
@@ -74,7 +74,7 @@ const { photoUrl } = usePhotos()
         </div>
       </div>
 
-      <p class="text-[11px] text-plum-muted mb-4">{{ PREVIEW_DISCLAIMER }}</p>
+      <p class="text-xs text-plum-muted mb-4">{{ PREVIEW_DISCLAIMER }}</p>
 
       <div
         class="border-t border-plum/10 pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"

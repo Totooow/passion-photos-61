@@ -1,9 +1,17 @@
 import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { timingSafeEqual, randomUUID } from 'node:crypto'
 
 // ── Config ──
+const REQUIRED_ENV = ['S3_BUCKET', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'API_KEY']
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) throw new Error(`Variable d'environnement manquante : ${key}`)
+}
+
 const BUCKET = process.env.S3_BUCKET
 const API_KEY = process.env.API_KEY
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
+const CATALOG_KEY = 'photos.json'
 
 const s3 = new S3Client({
   region: process.env.S3_REGION || 'fr-par',
@@ -18,33 +26,34 @@ const s3 = new S3Client({
 // ── Helpers ──
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  'X-Content-Type-Options': 'nosniff',
 }
 
 function respond(status, body) {
   return {
     statusCode: status,
     headers: { 'Content-Type': 'application/json', ...CORS },
-    body: JSON.stringify(body),
+    body: body ? JSON.stringify(body) : '',
   }
 }
 
 async function readCatalog() {
-  const res = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: 'photos.json' }))
+  const res = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: CATALOG_KEY }))
   const text = await new Response(res.Body).text()
   try {
     return JSON.parse(text)
   } catch {
-    throw new Error('photos.json corrompu')
+    throw new Error(`${CATALOG_KEY} corrompu`)
   }
 }
 
 async function writeCatalog(data) {
   await s3.send(new PutObjectCommand({
     Bucket: BUCKET,
-    Key: 'photos.json',
+    Key: CATALOG_KEY,
     Body: JSON.stringify(data, null, 2),
     ContentType: 'application/json',
     CacheControl: 'no-cache, must-revalidate',
@@ -63,6 +72,30 @@ function slugify(name) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
+}
+
+function validateName(body) {
+  if (!body?.name?.trim()) return 'name requis'
+  if (body.name.trim().length > 100) return 'name trop long (max 100 caractères)'
+  return null
+}
+
+function validateTitle(title) {
+  if (!title?.trim()) return 'title ne peut pas être vide'
+  if (title.trim().length > 200) return 'title trop long (max 200 caractères)'
+  return null
+}
+
+function validatePrices(prices, formats) {
+  const result = {}
+  for (const fmt of formats) {
+    const p = Number(prices[fmt.id])
+    if (isNaN(p) || p < 0) {
+      return { error: `Prix invalide pour le format "${fmt.id}" (doit être un nombre >= 0)` }
+    }
+    result[fmt.id] = p
+  }
+  return { prices: result }
 }
 
 // ── Route matching ──
@@ -92,35 +125,44 @@ function matchRoute(method, path) {
 
 // ── Entry point ──
 
-export async function handle(event, context, callback) {
+// TODO: race condition possible sur le catalogue — deux requêtes concurrentes peuvent écraser
+// les modifications de l'autre. Atténué par max-scale=1 dans la config Scaleway.
+export async function handle(event, context) {
   // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS, body: '' }
   }
 
   // Auth
-  const auth = event.headers?.authorization || event.headers?.Authorization
-  if (auth !== `Bearer ${API_KEY}`) {
-    return respond(401, { error: 'Unauthorized' })
+  const auth = event.headers?.authorization || event.headers?.Authorization || ''
+  const expected = `Bearer ${API_KEY}`
+  const isValid =
+    auth.length === expected.length &&
+    timingSafeEqual(Buffer.from(auth), Buffer.from(expected))
+  if (!isValid) {
+    return respond(401, { error: 'Non autorisé' })
   }
 
   const route = matchRoute(event.httpMethod, event.path)
   if (!route) {
-    return respond(404, { error: 'Not found' })
+    return respond(404, { error: 'Route introuvable' })
   }
 
+  const start = Date.now()
   try {
     let body = null
     if (event.body) {
       try {
         body = JSON.parse(event.body)
       } catch {
-        return respond(400, { error: 'Invalid JSON body' })
+        return respond(400, { error: 'Corps JSON invalide' })
       }
     }
-    return await route.handler(body, route.params)
+    const res = await route.handler(body, route.params)
+    console.log(JSON.stringify({ method: event.httpMethod, path: event.path, status: res.statusCode, ms: Date.now() - start }))
+    return res
   } catch (e) {
-    console.error(e)
+    console.error(JSON.stringify({ method: event.httpMethod, path: event.path, status: 500, ms: Date.now() - start, error: e.message }))
     return respond(500, { error: 'Erreur interne' })
   }
 }
@@ -134,10 +176,10 @@ function ping() {
 // ── Folders ──
 
 async function createFolder(body) {
-  if (!body?.name?.trim()) return respond(400, { error: 'name requis' })
+  const nameErr = validateName(body)
+  if (nameErr) return respond(400, { error: nameErr })
 
   const name = body.name.trim()
-  if (name.length > 100) return respond(400, { error: 'name trop long (max 100 caractères)' })
   const id = slugify(name)
   if (!id) return respond(400, { error: 'Nom invalide' })
 
@@ -155,8 +197,8 @@ async function createFolder(body) {
 }
 
 async function updateFolder(body, params) {
-  if (!body?.name?.trim()) return respond(400, { error: 'name requis' })
-  if (body.name.trim().length > 100) return respond(400, { error: 'name trop long (max 100 caractères)' })
+  const nameErr = validateName(body)
+  if (nameErr) return respond(400, { error: nameErr })
 
   const catalog = await readCatalog()
   const folder = catalog.folders.find(f => f.id === params.id)
@@ -199,7 +241,8 @@ async function createPhoto(body) {
   if (!body?.folder || !body?.title?.trim() || !body?.src || !body?.prices) {
     return respond(400, { error: 'folder, title, src et prices requis' })
   }
-  if (body.title.trim().length > 200) return respond(400, { error: 'title trop long (max 200 caractères)' })
+  const titleErr = validateTitle(body.title)
+  if (titleErr) return respond(400, { error: titleErr })
 
   const catalog = await readCatalog()
 
@@ -207,17 +250,11 @@ async function createPhoto(body) {
     return respond(400, { error: `Dossier "${body.folder}" introuvable` })
   }
 
-  // Validate prices
-  const prices = {}
-  for (const fmt of catalog.formats) {
-    const p = Number(body.prices[fmt.id])
-    if (isNaN(p) || p < 0) {
-      return respond(400, { error: `Prix invalide pour le format "${fmt.id}" (doit être un nombre >= 0)` })
-    }
-    prices[fmt.id] = p
-  }
+  const priceResult = validatePrices(body.prices, catalog.formats)
+  if (priceResult.error) return respond(400, { error: priceResult.error })
+  const prices = priceResult.prices
 
-  const id = `${body.folder}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  const id = `${body.folder}-${Date.now()}-${randomUUID().slice(0, 8)}`
   const photo = {
     id,
     folder: body.folder,
@@ -238,22 +275,15 @@ async function updatePhoto(body, params) {
   if (!photo) return respond(404, { error: 'Photo introuvable' })
 
   if (body?.title !== undefined) {
-    const title = body.title.trim()
-    if (!title) return respond(400, { error: 'title ne peut pas être vide' })
-    if (title.length > 200) return respond(400, { error: 'title trop long (max 200 caractères)' })
-    photo.title = title
+    const titleErr = validateTitle(body.title)
+    if (titleErr) return respond(400, { error: titleErr })
+    photo.title = body.title.trim()
   }
 
   if (body?.prices !== undefined) {
-    for (const fmt of catalog.formats) {
-      if (fmt.id in body.prices) {
-        const p = Number(body.prices[fmt.id])
-        if (isNaN(p) || p < 0) {
-          return respond(400, { error: `Prix invalide pour le format "${fmt.id}" (doit être un nombre >= 0)` })
-        }
-        photo.prices[fmt.id] = p
-      }
-    }
+    const priceResult = validatePrices(body.prices, catalog.formats)
+    if (priceResult.error) return respond(400, { error: priceResult.error })
+    Object.assign(photo.prices, priceResult.prices)
   }
 
   await writeCatalog(catalog)
@@ -276,7 +306,7 @@ async function deletePhoto(body, params) {
   catalog.photos = catalog.photos.filter(p => p.id !== params.id)
   await writeCatalog(catalog)
 
-  return respond(200, { deleted: params.id })
+  return respond(204, null)
 }
 
 // ── Presigned URL ──
@@ -287,13 +317,14 @@ async function presign(body) {
   }
 
   // Validate key: must be in preview/ folder, no traversal
-  if (body.key.includes('..') || body.key.startsWith('/') || !body.key.startsWith('preview/')) {
+  const key = decodeURIComponent(body.key)
+  if (key.includes('..') || key.startsWith('/') || !key.startsWith('preview/')) {
     return respond(400, { error: 'key invalide (doit commencer par preview/)' })
   }
 
   const cmd = new PutObjectCommand({
     Bucket: BUCKET,
-    Key: body.key,
+    Key: key,
     ContentType: body.contentType,
     ACL: 'public-read',
   })

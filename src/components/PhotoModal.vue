@@ -39,10 +39,10 @@ const { photoUrl } = usePhotos()
             </svg>
           </button>
 
-          <img :src="photoUrl(photo.src)" :alt="photo.title" class="w-full max-h-[70vh] object-contain bg-black/5" />
+          <img :src="photoUrl(photo.src)" :alt="photo.title" class="w-full max-h-[50vh] sm:max-h-[70vh] object-contain bg-black/5" />
 
           <div class="p-4">
-            <p class="text-[11px] text-plum-muted mb-3">{{ PREVIEW_DISCLAIMER }}</p>
+            <p class="text-xs text-plum-muted mb-3">{{ PREVIEW_DISCLAIMER }}</p>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 class="font-serif text-lg font-bold text-plum-dark">{{ photo.title }}</h3>
               <FormatSelector :photo="photo" variant="modal" />

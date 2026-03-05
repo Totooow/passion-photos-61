@@ -42,28 +42,28 @@ const contributions = [
       </p>
 
       <!-- Cards -->
-      <div class="grid grid-cols-3 gap-3 max-w-xl w-full mt-8 animate-item" style="--delay: 3">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full mt-8 animate-item" style="--delay: 3">
         <article
           v-for="item in contributions"
           :key="item.title"
-          class="group bg-white/60 border border-plum/[0.06] rounded-xl p-4 text-center hover:bg-white/90 hover:border-plum/10 transition-all duration-500"
+          class="group bg-white/60 border border-plum/[0.06] rounded-xl p-6 text-center hover:bg-white/90 hover:border-plum/10 transition-all duration-500"
         >
-          <div class="w-9 h-9 mx-auto mb-3 rounded-full bg-plum/[0.04] flex items-center justify-center group-hover:bg-plum/[0.08] transition-colors duration-500">
-            <svg v-if="item.icon === 'lens'" class="w-4 h-4 text-plum/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <div class="w-11 h-11 mx-auto mb-3 rounded-full bg-plum/[0.04] flex items-center justify-center group-hover:bg-plum/[0.08] transition-colors duration-500">
+            <svg v-if="item.icon === 'lens'" class="w-5 h-5 text-plum/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2.5" />
               <line x1="12" y1="2" x2="12" y2="6" /><line x1="12" y1="18" x2="12" y2="22" />
               <line x1="2" y1="12" x2="6" y2="12" /><line x1="18" y1="12" x2="22" y2="12" />
             </svg>
-            <svg v-if="item.icon === 'compass'" class="w-4 h-4 text-plum/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-if="item.icon === 'compass'" class="w-5 h-5 text-plum/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" />
               <polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88" fill="currentColor" opacity="0.15" stroke="currentColor" />
             </svg>
-            <svg v-if="item.icon === 'clock'" class="w-4 h-4 text-plum/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-if="item.icon === 'clock'" class="w-5 h-5 text-plum/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" />
             </svg>
           </div>
-          <h3 class="font-serif text-sm font-semibold text-plum-dark mb-1">{{ item.title }}</h3>
-          <p class="text-xs text-plum-muted leading-relaxed">{{ item.description }}</p>
+          <h3 class="font-serif text-base font-semibold text-plum-dark mb-1">{{ item.title }}</h3>
+          <p class="text-sm text-plum-muted leading-relaxed">{{ item.description }}</p>
         </article>
       </div>
 
