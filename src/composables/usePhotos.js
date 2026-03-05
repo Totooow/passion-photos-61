@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { S3_BASE_URL } from '@/config'
 
 const photos = ref([])
@@ -8,14 +8,17 @@ const loading = ref(false)
 const error = ref(null)
 let fetched = false
 
+export function catalogUrl() {
+  return S3_BASE_URL ? `${S3_BASE_URL}/photos.json` : '/photos.json'
+}
+
 export function usePhotos() {
   async function fetchPhotos() {
     if (fetched) return
     loading.value = true
     error.value = null
     try {
-      const url = S3_BASE_URL ? `${S3_BASE_URL}/photos.json` : '/photos.json'
-      const res = await fetch(url)
+      const res = await fetch(catalogUrl())
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       folders.value = data.folders || []

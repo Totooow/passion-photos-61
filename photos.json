@@ -1,0 +1,18 @@
+{
+  "folders": [
+  ],
+  "formats": [
+    { "id": "10x15", "label": "10x15 cm", "type": "print" },
+    { "id": "13x18", "label": "13x18 cm", "type": "print" },
+    { "id": "numerique", "label": "Numérique", "type": "digital" }
+  ],
+  "photos": [
+    {
+      "id": "chevaux-1",
+      "folder": "chevaux",
+      "title": "Cheval au galop",
+      "src": "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=600&q=80",
+      "prices": { "10x15": 5, "13x18": 8, "numerique": 3 }
+    }
+  ]
+}

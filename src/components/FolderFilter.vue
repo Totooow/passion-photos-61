@@ -20,7 +20,9 @@ defineEmits(['select'])
       v-for="folder in folders"
       :key="folder.id"
       class="px-4 py-1.5 rounded-full text-sm transition-colors"
-      :class="active === folder.id ? 'bg-plum text-white' : 'bg-cream-dark text-plum-dark hover:bg-plum hover:text-white'"
+      :class="
+        active === folder.id ? 'bg-plum text-white' : 'bg-cream-dark text-plum-dark hover:bg-plum hover:text-white'
+      "
       @click="$emit('select', folder.id)"
     >
       {{ folder.name }}
