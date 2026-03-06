@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue'
-import { CONTACT_EMAIL } from '@/config'
+import { CONTACT_EMAIL, API_URL } from '@/config'
 
 const STORAGE_KEY = 'passion-photos-61-cart'
 
@@ -102,6 +102,30 @@ export function useCart() {
     return `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`
   }
 
+  async function checkout() {
+    const payload = {
+      items: state.items.map((item) => ({
+        id: item.id,
+        formatId: item.formatId,
+        qty: item.qty,
+      })),
+    }
+
+    const res = await fetch(`${API_URL}/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error || `Erreur ${res.status}`)
+    }
+
+    const { url } = await res.json()
+    window.location.href = url
+  }
+
   return {
     items: computed(() => state.items),
     itemCount,
@@ -113,5 +137,6 @@ export function useCart() {
     getQty,
     clearCart,
     buildMailto,
+    checkout,
   }
 }

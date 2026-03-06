@@ -135,6 +135,7 @@ function formatPrices(photo) {
           <input
             v-model="editForm.title"
             type="text"
+            maxlength="200"
             class="admin-input w-full text-sm"
             @keyup.enter="$emit('save-edit', photo)"
           />

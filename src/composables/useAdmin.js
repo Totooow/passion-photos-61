@@ -3,7 +3,6 @@ import { catalogUrl } from '@/composables/usePhotos'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const apiKey = ref(sessionStorage.getItem('pp61_api_key') || '')
 const connected = ref(false)
 const connecting = ref(false)
 const error = ref(null)
@@ -12,8 +11,8 @@ const catalog = ref({ folders: [], formats: [], photos: [] })
 async function api(method, path, body) {
   const res = await fetch(`${API_URL}${path}`, {
     method,
+    credentials: 'include',
     headers: {
-      Authorization: `Bearer ${apiKey.value}`,
       'Content-Type': 'application/json',
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -28,7 +27,7 @@ async function api(method, path, body) {
     }
     throw new Error(msg)
   }
-  return res.json()
+  return res.status === 204 ? null : res.json()
 }
 
 export function useAdmin() {
@@ -38,32 +37,47 @@ export function useAdmin() {
     connecting.value = true
     error.value = null
     try {
-      apiKey.value = key
-      await api('GET', '/ping')
+      // Authenticate via POST /login — sets HTTP-only cookie
+      const loginRes = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      })
+      if (!loginRes.ok) {
+        const data = await loginRes.json().catch(() => ({}))
+        throw new Error(data.error || `HTTP ${loginRes.status}`)
+      }
       // Auth OK — load catalog from S3 (public)
       const res = await fetch(catalogUrl())
       if (!res.ok) throw new Error(`Catalogue inaccessible (HTTP ${res.status})`)
       catalog.value = await res.json()
       connected.value = true
-      sessionStorage.setItem('pp61_api_key', key)
     } catch (e) {
       error.value = e.message
       connected.value = false
-      apiKey.value = ''
     } finally {
       connecting.value = false
     }
   }
 
-  function disconnect() {
+  async function disconnect() {
+    await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' }).catch(() => {})
     connected.value = false
     catalog.value = { folders: [], formats: [], photos: [] }
-    apiKey.value = ''
-    sessionStorage.removeItem('pp61_api_key')
   }
 
-  function loadSavedKey() {
-    return sessionStorage.getItem('pp61_api_key')
+  async function tryReconnect() {
+    try {
+      await api('GET', '/session')
+      const res = await fetch(catalogUrl())
+      if (!res.ok) return false
+      catalog.value = await res.json()
+      connected.value = true
+      return true
+    } catch {
+      return false
+    }
   }
 
   // ── Folders ──
@@ -108,6 +122,13 @@ export function useAdmin() {
     catalog.value.photos = catalog.value.photos.filter((p) => p.id !== id)
   }
 
+  // ── Orders ──
+
+  async function fetchOrders() {
+    const { orders } = await api('GET', '/orders')
+    return orders
+  }
+
   // ── Upload ──
 
   async function getPresignedUrl(key, contentType) {
@@ -122,13 +143,14 @@ export function useAdmin() {
     catalog,
     connectAdmin,
     disconnect,
-    loadSavedKey,
+    tryReconnect,
     addFolder,
     renameFolder,
     removeFolder,
     addPhoto,
     updatePhoto,
     removePhoto,
+    fetchOrders,
     getPresignedUrl,
   }
 }

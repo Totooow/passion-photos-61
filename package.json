@@ -16,6 +16,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@tanstack/vue-virtual": "^3.13.20",
     "vue": "^3.5.29",
     "vue-router": "^4.6.4"
   },

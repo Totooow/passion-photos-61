@@ -48,13 +48,16 @@ else
   echo "Function found: $FN_ID"
 fi
 
-# ── Package ──
+# ── Build & Package ──
 echo "Installing dependencies..."
-npm install --omit=dev
+npm install
+
+echo "Bundling..."
+npx esbuild handler.js --bundle --platform=node --target=node22 --outfile=dist/handler.js --format=esm --minify --banner:js="import { createRequire } from 'module'; const require = createRequire(import.meta.url);"
 
 echo "Packaging..."
 rm -f function.zip
-zip -r function.zip handler.js node_modules/ package.json
+zip -j function.zip dist/handler.js package.json
 
 # ── Upload zip via presigned URL ──
 ZIP_SIZE=$(stat -f%z function.zip 2>/dev/null || stat -c%s function.zip)

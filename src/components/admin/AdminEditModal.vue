@@ -49,7 +49,7 @@ function handleSave() {
         <form class="space-y-3" @submit.prevent="handleSave">
           <div>
             <label class="block text-xs font-medium text-plum-muted mb-1">Titre</label>
-            <input v-model="editForm.title" type="text" class="admin-input w-full" autofocus />
+            <input v-model="editForm.title" type="text" maxlength="200" class="admin-input w-full" autofocus />
           </div>
 
           <div>

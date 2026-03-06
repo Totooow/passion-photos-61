@@ -124,6 +124,7 @@ function submitRename() {
             <input
               v-model="newFolderName"
               type="text"
+              maxlength="100"
               class="admin-input w-full mb-4"
               placeholder="Ex: Chevaux"
               autofocus
@@ -161,7 +162,7 @@ function submitRename() {
           <h3 class="text-lg font-bold text-plum-dark mb-4">Renommer le dossier</h3>
           <form @submit.prevent="submitRename">
             <label class="block text-xs font-medium text-plum-muted mb-1">Nouveau nom</label>
-            <input v-model="renameModal.name" type="text" class="admin-input w-full mb-4" autofocus />
+            <input v-model="renameModal.name" type="text" maxlength="100" class="admin-input w-full mb-4" autofocus />
             <div class="flex justify-end gap-2">
               <button
                 type="button"

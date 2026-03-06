@@ -1,10 +1,12 @@
 <script setup>
-import { BMAC_URL } from '@/config'
+import { ref } from 'vue'
+import { API_URL } from '@/config'
+import StripeButton from '@/components/StripeButton.vue'
 
 const contributions = [
   {
     title: 'Matériel',
-    description: 'Objectifs et accessoires pour repousser les limites créatives.',
+    description: 'Objectifs et accessoires pour améliorer la qualité des photos.',
     icon: 'lens',
   },
   {
@@ -14,10 +16,54 @@ const contributions = [
   },
   {
     title: 'Formation',
-    description: "Du temps pour perfectionner l'art de la photographie.",
+    description: "Du temps pour me perfectionner et faire vivre ce site.",
     icon: 'clock',
   },
 ]
+
+const presets = [2, 5, 10]
+const selectedPreset = ref(5)
+const customAmount = ref('')
+const useCustom = ref(false)
+
+function selectPreset(value) {
+  selectedPreset.value = value
+  useCustom.value = false
+  customAmount.value = ''
+}
+
+function selectCustom() {
+  useCustom.value = true
+  selectedPreset.value = null
+}
+
+function amountInCents() {
+  if (useCustom.value) {
+    const n = parseFloat(customAmount.value)
+    if (isNaN(n) || n < 1 || n > 1000) return null
+    return Math.round(n * 100)
+  }
+  return selectedPreset.value * 100
+}
+
+async function donate() {
+  const cents = amountInCents()
+  if (!cents) throw new Error('Montant invalide (entre 1€ et 1000€)')
+
+  const res = await fetch(`${API_URL}/donate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount: cents }),
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || `Erreur ${res.status}`)
+  }
+
+  const { url } = await res.json()
+  window.location.href = url
+}
 </script>
 
 <template>
@@ -38,7 +84,7 @@ const contributions = [
         Chaque geste compte
       </h1>
       <p class="max-w-md mx-auto text-plum-muted text-sm leading-relaxed mt-4 animate-item" style="--delay: 2">
-        Si mes images vous touchent, votre soutien me permet de continuer à créer.
+        Si vous appréciez mon travail, votre soutien me permet de continuer à créer.
       </p>
 
       <!-- Cards -->
@@ -67,20 +113,61 @@ const contributions = [
         </article>
       </div>
 
+      <!-- Amount selector -->
+      <div class="mt-8 animate-item" style="--delay: 4">
+        <div class="flex items-center justify-center gap-2 flex-wrap">
+          <button
+            v-for="amount in presets"
+            :key="amount"
+            @click="selectPreset(amount)"
+            :class="[
+              'px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border',
+              selectedPreset === amount && !useCustom
+                ? 'bg-plum text-white border-plum shadow-md shadow-plum/20'
+                : 'bg-white/60 text-plum-dark border-plum/10 hover:border-plum/25 hover:bg-white/90',
+            ]"
+          >
+            {{ amount }}&nbsp;&euro;
+          </button>
+          <button
+            @click="selectCustom"
+            :class="[
+              'px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border',
+              useCustom
+                ? 'bg-plum text-white border-plum shadow-md shadow-plum/20'
+                : 'bg-white/60 text-plum-dark border-plum/10 hover:border-plum/25 hover:bg-white/90',
+            ]"
+          >
+            Autre
+          </button>
+        </div>
+
+        <!-- Custom amount input -->
+        <div v-if="useCustom" class="mt-4 flex items-center justify-center gap-2">
+          <div class="relative">
+            <input
+              v-model="customAmount"
+              type="number"
+              min="1"
+              max="1000"
+              step="0.5"
+              placeholder="Montant"
+              class="w-28 pl-3 pr-8 py-2 rounded-lg border border-plum/15 bg-white/80 text-plum-dark text-sm text-center focus:outline-none focus:border-plum/40 focus:ring-1 focus:ring-plum/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-plum-muted text-sm">&euro;</span>
+          </div>
+        </div>
+      </div>
+
       <!-- CTA -->
-      <a
-        :href="BMAC_URL"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="group/btn inline-flex items-center gap-2 mt-8 px-8 py-3 bg-plum text-white rounded-full text-sm tracking-wide hover:bg-plum-light transition-all duration-300 hover:shadow-lg hover:shadow-plum/20 animate-item"
-        style="--delay: 4"
-      >
-        <span>M'offrir un café</span>
-        <svg class="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="5" y1="12" x2="19" y2="12" />
-          <polyline points="12,5 19,12 12,19" />
-        </svg>
-      </a>
+      <div class="mt-6 animate-item" style="--delay: 5">
+        <StripeButton label="Faire un don" loading-label="Redirection…" :action="donate" />
+      </div>
+
+      <!-- Stripe badge -->
+      <p class="mt-4 text-plum-muted/50 text-[11px] tracking-wide animate-item" style="--delay: 6">
+        Paiement sécurisé par <span class="font-bold text-[#635BFF]">Stripe</span>
+      </p>
     </section>
 
     <!-- Wave -->
