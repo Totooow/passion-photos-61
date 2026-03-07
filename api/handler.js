@@ -1,5 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { AwsClient } from 'aws4fetch'
 import { timingSafeEqual, randomUUID } from 'node:crypto'
 import Stripe from 'stripe'
 
@@ -18,15 +17,17 @@ const SITE_URL = process.env.SITE_URL || 'http://localhost:5173'
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
 
-const s3 = new S3Client({
+const S3_ENDPOINT = process.env.S3_ENDPOINT || 'https://s3.fr-par.scw.cloud'
+const s3 = new AwsClient({
+  accessKeyId: process.env.S3_ACCESS_KEY,
+  secretAccessKey: process.env.S3_SECRET_KEY,
   region: process.env.S3_REGION || 'fr-par',
-  endpoint: process.env.S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY,
-    secretAccessKey: process.env.S3_SECRET_KEY,
-  },
-  forcePathStyle: true,
+  service: 's3',
 })
+
+function s3url(key) {
+  return `${S3_ENDPOINT}/${BUCKET}/${key}`
+}
 
 // ── Async mutex (prevents interleaved read-modify-write within a single container) ──
 
@@ -74,8 +75,9 @@ function setSessionCookie(value, maxAge = COOKIE_MAX_AGE) {
 }
 
 async function readCatalog() {
-  const res = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: CATALOG_KEY }))
-  const text = await new Response(res.Body).text()
+  const res = await s3.fetch(s3url(CATALOG_KEY))
+  if (!res.ok) throw new Error(`S3 GET ${CATALOG_KEY}: ${res.status}`)
+  const text = await res.text()
   try {
     return JSON.parse(text)
   } catch {
@@ -84,40 +86,42 @@ async function readCatalog() {
 }
 
 async function readOrders() {
-  try {
-    const res = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: ORDERS_KEY }))
-    const text = await new Response(res.Body).text()
-    return JSON.parse(text)
-  } catch (err) {
-    if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) return []
-    throw err
-  }
+  const res = await s3.fetch(s3url(ORDERS_KEY))
+  if (res.status === 404) return []
+  if (!res.ok) throw new Error(`S3 GET ${ORDERS_KEY}: ${res.status}`)
+  const text = await res.text()
+  return JSON.parse(text)
 }
 
 async function writeOrders(data) {
-  await s3.send(new PutObjectCommand({
-    Bucket: BUCKET,
-    Key: ORDERS_KEY,
-    Body: JSON.stringify(data, null, 2),
-    ContentType: 'application/json',
-    CacheControl: 'no-cache, must-revalidate',
-    ACL: 'private',
-  }))
+  const res = await s3.fetch(s3url(ORDERS_KEY), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, must-revalidate',
+      'x-amz-acl': 'private',
+    },
+    body: JSON.stringify(data, null, 2),
+  })
+  if (!res.ok) throw new Error(`S3 PUT ${ORDERS_KEY}: ${res.status}`)
 }
 
 async function writeCatalog(data) {
-  await s3.send(new PutObjectCommand({
-    Bucket: BUCKET,
-    Key: CATALOG_KEY,
-    Body: JSON.stringify(data, null, 2),
-    ContentType: 'application/json',
-    CacheControl: 'no-cache, must-revalidate',
-    ACL: 'public-read',
-  }))
+  const res = await s3.fetch(s3url(CATALOG_KEY), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, must-revalidate',
+      'x-amz-acl': 'public-read',
+    },
+    body: JSON.stringify(data, null, 2),
+  })
+  if (!res.ok) throw new Error(`S3 PUT ${CATALOG_KEY}: ${res.status}`)
 }
 
 async function deleteS3File(key) {
-  await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
+  const res = await s3.fetch(s3url(key), { method: 'DELETE' })
+  if (!res.ok && res.status !== 404) throw new Error(`S3 DELETE ${key}: ${res.status}`)
 }
 
 function slugify(name) {
@@ -442,15 +446,15 @@ async function presign(body) {
     return respond(400, { error: 'key invalide (doit commencer par preview/)' })
   }
 
-  const cmd = new PutObjectCommand({
-    Bucket: BUCKET,
-    Key: key,
-    ContentType: body.contentType,
-    ACL: 'public-read',
+  const signed = await s3.sign(s3url(key), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': body.contentType,
+      'x-amz-acl': 'public-read',
+    },
+    aws: { signQuery: true, allHeaders: true },
   })
-
-  const url = await getSignedUrl(s3, cmd, { expiresIn: 600 })
-  return respond(200, { url })
+  return respond(200, { url: signed.url })
 }
 
 // ── Stripe Checkout ──

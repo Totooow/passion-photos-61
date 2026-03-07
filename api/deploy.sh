@@ -57,7 +57,7 @@ npx esbuild handler.js --bundle --platform=node --target=node22 --outfile=dist/h
 
 echo "Packaging..."
 rm -f function.zip
-zip -j function.zip dist/handler.js package.json
+zip -j function.zip dist/handler.js
 
 # ── Upload zip via presigned URL ──
 ZIP_SIZE=$(stat -f%z function.zip 2>/dev/null || stat -c%s function.zip)
